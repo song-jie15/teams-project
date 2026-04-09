@@ -12,7 +12,7 @@ instance.interceptors.request.use(
   function (config) {
     //config是请求配置对象
     //再发送请求之前应该做什么（如果是登录用户的话 在请求头中添加token信息）
-    if(sessionStorage.getItem('token')){
+    if(localStorage.getItem('token')){
         config.headers.Authorization = 'Bearer ' + localStorage.getItem('token');
     }
     return config;

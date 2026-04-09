@@ -47,11 +47,12 @@
             </thead>
             <tbody>
               <tr
-                v-for="(user, index) in users"
+                v-for="(user, index) in userlist"
                 :key="user.id"
                 draggable="true"
                 @dragstart="handleDragStart($event, index)"
                 @dragover="handleDragOver($event)"
+                @dragleave="handleDragLeave($event)"
                 @drop="handleDrop($event, index)"
                 class="draggable-row"
               >
@@ -117,14 +118,15 @@
                 draggable="true"
                 @dragstart="handleArticleDragStart($event, index)"
                 @dragover="handleDragOver($event)"
+                @dragleave="handleDragLeave($event)"
                 @drop="handleArticleDrop($event, index)"
                 class="draggable-row"
               >
                 <td class="drag-handle">☰</td>
                 <td>{{ article.id }}</td>
                 <td>{{ article.title }}</td>
-                <td>{{ article.author }}</td>
-                <td>{{ article.date }}</td>
+                <td>{{ article.zuozhe || article.author }}</td>
+                <td>{{ formatDate(article.date) }}</td>
                 <td>
                   <button class="btn btn-edit">编辑</button>
                   <button class="btn btn-delete">删除</button>
@@ -165,6 +167,7 @@
 </template>
 
 <script setup>
+import axios from '../../utiles/request'
 import { ref, onMounted } from 'vue'
 
 // ==================== 定义 props ====================
@@ -210,14 +213,63 @@ const t = (key) => {
   return translations[currentLanguage.value][key] || key
 }
 
+// 时间格式化函数
+const formatDate = (date) => {
+  if (!date) return ''
+
+  // 处理时间戳（秒或毫秒）
+  let timestamp = date
+  if (typeof date === 'string') {
+    // 尝试解析字符串为时间戳
+    if (!isNaN(date)) {
+      timestamp = parseInt(date)
+      // 检查是否为秒级时间戳（10位）
+      if (timestamp.toString().length === 10) {
+        timestamp *= 1000
+      }
+    } else {
+      // 尝试直接解析日期字符串
+      timestamp = new Date(date).getTime()
+    }
+  }
+
+  // 创建日期对象
+  const d = new Date(timestamp)
+
+  // 检查日期是否有效
+  if (isNaN(d.getTime())) return ''
+
+  // 格式化日期
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  const seconds = String(d.getSeconds()).padStart(2, '0')
+
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+}
+
 // ==================== 模拟数据 ====================
 // 用户数据
-const users = ref([
-  { id: 1, username: 'huangshang', role: '皇上' },
-  { id: 2, username: 'taijian', role: '太监' },
-  { id: 3, username: 'pingmin', role: '平民' }
-])
-
+const userlist = ref([])
+//拉取用户数据
+const getUserlist = async () => {
+  const res = await axios.post('http://localhost:3000/userlist')
+  userlist.value = res.data
+  console.log('获取后端用户数据', res.data)
+}
+//拉取文章数据
+const getArticallist = async () => {
+  const res = await axios.post('http://localhost:3000/articlelist')
+  articles.value = res.data
+  console.log('获取后端文章数据', res.data)
+}
+//调用函数
+onMounted(() => {
+  getUserlist()
+  getArticallist()
+})
 // 文章数据
 const articles = ref([
   { id: 1, title: 'Vue 3 入门教程', author: 'huangshang', date: '2026-04-01' },
@@ -261,7 +313,23 @@ const handleArticleDragStart = (event, index) => {
  */
 const handleDragOver = (event) => {
   event.preventDefault() // 阻止默认行为，允许放置
-  event.target.classList.add('drag-over')
+  // 确保只给tr元素添加drag-over样式
+  const target = event.target.closest('tr')
+  if (target) {
+    target.classList.add('drag-over')
+  }
+}
+
+/**
+ * 处理拖拽离开事件
+ * @param {Event} event - 拖拽事件
+ */
+const handleDragLeave = (event) => {
+  // 确保只移除tr元素的drag-over样式
+  const target = event.target.closest('tr')
+  if (target) {
+    target.classList.remove('drag-over')
+  }
 }
 
 /**
@@ -272,22 +340,24 @@ const handleDragOver = (event) => {
 const handleDrop = (event, dropIndex) => {
   event.preventDefault() // 阻止默认行为
 
-  // 移除拖拽样式
-  event.target.classList.remove('dragging', 'drag-over')
+  // 移除所有tr元素的拖拽样式
+  document.querySelectorAll('.draggable-row').forEach((row) => {
+    row.classList.remove('dragging', 'drag-over')
+  })
 
   // 确保拖拽索引有效
   if (dragStartIndex.value !== null && dragStartIndex.value !== dropIndex) {
     // 执行排序操作
-    const newUsers = [...users.value]
+    const newUsers = [...userlist.value]
     const [draggedItem] = newUsers.splice(dragStartIndex.value, 1)
     newUsers.splice(dropIndex, 0, draggedItem)
-    users.value = newUsers
+    userlist.value = newUsers
 
     // 重置拖拽索引
     dragStartIndex.value = null
 
     // 这里可以添加调用后端 API 的代码，保存排序结果
-    console.log('排序后的用户列表:', users.value)
+    console.log('排序后的用户列表:', userlist.value)
   }
 }
 
@@ -299,8 +369,10 @@ const handleDrop = (event, dropIndex) => {
 const handleArticleDrop = (event, dropIndex) => {
   event.preventDefault() // 阻止默认行为
 
-  // 移除拖拽样式
-  event.target.classList.remove('dragging', 'drag-over')
+  // 移除所有tr元素的拖拽样式
+  document.querySelectorAll('.draggable-row').forEach((row) => {
+    row.classList.remove('dragging', 'drag-over')
+  })
 
   // 确保拖拽索引有效
   if (
@@ -441,32 +513,52 @@ onMounted(() => {
 // ==================== 表格容器样式 ====================
 .table-container {
   overflow-x: auto;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background-color: white;
+  padding: 1.5rem;
 
   .drag-hint {
     color: var(--text-secondary, #64748b);
     font-size: 0.875rem;
     margin-bottom: 1rem;
+    font-weight: 500;
   }
 
   .data-table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 0.875rem;
 
     th,
     td {
-      padding: 0.75rem 1rem;
+      padding: 1rem 1.25rem;
       text-align: left;
       border-bottom: 1px solid var(--border-color, #e2e8f0);
+      transition: all 0.2s ease;
     }
 
     th {
-      background-color: #f8fafc;
+      background-color: #f1f5f9;
       font-weight: 600;
       color: var(--text-primary, #1e293b);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.75rem;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
 
-    tr:hover {
-      background-color: #f8fafc;
+    tr {
+      transition: all 0.2s ease;
+
+      &:hover {
+        background-color: #f8fafc;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
     }
 
     .drag-handle {
@@ -474,38 +566,63 @@ onMounted(() => {
       user-select: none;
       font-size: 1.25rem;
       color: var(--text-secondary, #64748b);
-      width: 40px;
+      width: 50px;
       text-align: center;
+      transition: all 0.2s ease;
+      padding: 0.5rem;
+      border-radius: 0.25rem;
 
       &:hover {
         color: var(--primary-color, #3498db);
+        background-color: rgba(52, 152, 219, 0.1);
+      }
+
+      &:active {
+        cursor: grabbing;
       }
     }
 
     .draggable-row {
       cursor: move;
+      transition: all 0.2s ease;
 
       &:hover {
         background-color: #f8fafc;
       }
 
       &.dragging {
-        opacity: 0.5;
+        opacity: 0.7;
         background-color: #e2e8f0;
+        transform: rotate(2deg);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
       }
 
       &.drag-over {
         background-color: #e0f2fe;
+        border-left: 4px solid var(--primary-color, #3498db);
       }
     }
 
     .btn {
-      padding: 0.25rem 0.75rem;
+      padding: 0.375rem 0.875rem;
       border-radius: 0.25rem;
-      font-size: 0.875rem;
+      font-size: 0.75rem;
+      font-weight: 500;
       cursor: pointer;
       border: none;
       margin-right: 0.5rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      }
+
+      &:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
 
       &.btn-edit {
         background-color: #3498db;
