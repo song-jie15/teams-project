@@ -1,18 +1,19 @@
 <template>
   <div class="home-container">
     <!-- 左侧菜单栏：Sidebar 组件 -->
-    <Siderbar :user-info="userInfo" @toggle-sidebar="handleToggleSidebar" />
+    <Siderbar
+      :user-info="userInfo"
+      @toggle-sidebar="handleToggleSidebar"
+      @menu-click="handleMenuClick"
+    />
 
     <!-- 右侧主内容区域 -->
     <div class="main-container">
       <!-- 头部导航栏：Navbar 组件 -->
       <Navbar :user-info="userInfo" @toggle-sidebar="handleToggleSidebar" />
 
-      <!-- 页面内容 -->
-      <div class="content-area">
-        <h1>欢迎来到主页面！</h1>
-        <p>这是登录后的首页</p>
-      </div>
+      <!-- 页面内容：AppMain 组件 -->
+      <AppMain :current-menu="currentMenu" />
     </div>
   </div>
 </template>
@@ -21,6 +22,7 @@
 import { ref, onMounted } from 'vue'
 import Siderbar from '../components/layout/siderbar/index.vue'
 import Navbar from '../components/layout/Navbar.vue'
+import AppMain from '../components/layout/AppMain.vue'
 
 // ==================== 用户信息 ====================
 // 存储当前登录用户的信息，包括头像、姓名、角色等
@@ -35,6 +37,9 @@ const userInfo = ref({
 // ==================== 侧边栏状态 ====================
 const sidebarOpen = ref(false)
 
+// ==================== 当前选中菜单 ====================
+const currentMenu = ref('personalCenter')
+
 // ==================== 方法定义 ====================
 
 /**
@@ -46,6 +51,15 @@ const handleToggleSidebar = () => {
   if (sidebar) {
     sidebar.classList.toggle('collapsed')
   }
+}
+
+/**
+ * 处理菜单项点击事件
+ * @param {string} menuKey - 菜单项的唯一标识
+ */
+const handleMenuClick = (menuKey) => {
+  console.log('处理菜单点击:', menuKey)
+  currentMenu.value = menuKey
 }
 
 /**

@@ -10,11 +10,7 @@
     <nav class="sidebar-menu">
       <!-- 个人中心 -->
       <div class="menu-item">
-        <a
-          href="#"
-          class="menu-link active"
-          @click.prevent="handleMenuClick('personalCenter')"
-        >
+        <a href="#" class="menu-link active">
           <span class="menu-icon">👤</span>
           <span class="menu-text">{{ t('personalCenter') }}</span>
         </a>
@@ -30,21 +26,11 @@
         <div class="sub-menu">
           <!-- 用户列表：皇上和太监会显示 -->
           <div v-if="hasPermission('01')" class="sub-menu-item">
-            <a
-              href="#"
-              class="menu-link"
-              @click.prevent="handleMenuClick('userList')"
-              >{{ t('userList') }}</a
-            >
+            <a href="#" class="menu-link">{{ t('userList') }}</a>
           </div>
           <!-- 添加用户：只有皇上会显示 -->
           <div v-if="hasPermission('02')" class="sub-menu-item">
-            <a
-              href="#"
-              class="menu-link"
-              @click.prevent="handleMenuClick('addUser')"
-              >{{ t('addUser') }}</a
-            >
+            <a href="#" class="menu-link">{{ t('addUser') }}</a>
           </div>
         </div>
       </div>
@@ -59,21 +45,11 @@
         <div class="sub-menu">
           <!-- 文章列表：所有人都会显示 -->
           <div v-if="hasPermission('03')" class="sub-menu-item">
-            <a
-              href="#"
-              class="menu-link"
-              @click.prevent="handleMenuClick('articleList')"
-              >{{ t('articleList') }}</a
-            >
+            <a href="#" class="menu-link">{{ t('articleList') }}</a>
           </div>
           <!-- 发布文章：所有人都会显示 -->
           <div v-if="hasPermission('04')" class="sub-menu-item">
-            <a
-              href="#"
-              class="menu-link"
-              @click.prevent="handleMenuClick('publishArticle')"
-              >{{ t('publishArticle') }}</a
-            >
+            <a href="#" class="menu-link">{{ t('publishArticle') }}</a>
           </div>
         </div>
       </div>
@@ -124,7 +100,7 @@ const hasPermission = (permissionCode) => {
 }
 
 // ==================== 定义 emits ====================
-const emit = defineEmits(['toggleSidebar', 'menuClick'])
+const emit = defineEmits(['toggleSidebar'])
 
 // ==================== 语言切换功能 ====================
 // 当前语言：'zh' 中文，'en' 英文
@@ -173,15 +149,6 @@ const toggleDropdown = (event) => {
     link.classList.toggle('active')
     subMenu.classList.toggle('open')
   }
-}
-
-/**
- * 处理菜单项点击事件
- * @param {string} menuKey - 菜单项的唯一标识
- */
-const handleMenuClick = (menuKey) => {
-  console.log('菜单点击:', menuKey)
-  emit('menuClick', menuKey)
 }
 
 // ==================== 生命周期钩子 ====================

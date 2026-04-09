@@ -191,6 +191,12 @@ const user = reactive({
 
 // —————————————————— 原有登录逻辑 ——————————————————
 const handleLogin = async () => {
+  console.log('登录信息:', {
+    ...user,
+    rememberMe: rememberMe.value,
+    loginType: activeTab.value
+  })
+
   try {
     let response
     if (activeTab.value === 'password') {
@@ -199,7 +205,7 @@ const handleLogin = async () => {
         password: user.password
       })
     } else {
-      response = await axios.post('http://localhost:3000/loginByCode', {
+      response = await axios.post('http://localhost:3000/login/sms', {
         phone: user.phone,
         code: user.code
       })
@@ -207,16 +213,16 @@ const handleLogin = async () => {
 
     const { code, msg, token } = response.data
     if (code === 200) {
-      ElMessage.success(msg)
+      alert(msg)
       localStorage.setItem('token', token)
+      localStorage.setItem('userInfo', JSON.stringify(response.data))
       router.push('/')
     } else {
-      ElMessage.error(msg)
+      alert(msg)
     }
   } catch (error) {
-    console.log(error)
-
-    ElMessage.error('登录失败，请稍后重试')
+    console.error('登录失败:', error)
+    alert('登录失败，请稍后重试')
   }
 }
 
