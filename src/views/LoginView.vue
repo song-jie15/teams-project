@@ -161,7 +161,7 @@
               >
                 ← 返回账号密码登录
               </button>
-            </div>
+            </div> 
           </div>
         </div>
       </div>
@@ -205,7 +205,7 @@ const handleLogin = async () => {
         password: user.password
       })
     } else {
-      response = await axios.post('http://localhost:3000/login/sms', {
+      response = await axios.post('http://localhost:3000/loginByCode', {
         phone: user.phone,
         code: user.code
       })
