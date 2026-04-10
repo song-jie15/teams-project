@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "axios": "^1.13.6",
+    "countup.js": "^2.10.0",
+    "echarts": "^6.0.0",
     "element-plus": "^2.13.2",
     "pinia": "^3.0.4",
     "qrcode": "^1.5.4",

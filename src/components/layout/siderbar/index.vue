@@ -77,6 +77,13 @@
           </div>
         </div>
       </div>
+      <!-- 数据可视化 -->
+      <div v-if="hasPermission('01')" class="menu-item" >
+        <a href="#" class="menu-link" @click.prevent="handleMenuClick('datalist')">
+          <span class="menu-icon">📊</span>
+          <span class="menu-text">{{ t('DataKe') }}</span>
+        </a>
+      </div>
     </nav>
 
     <!-- 侧边栏底部：用户信息 -->
@@ -96,6 +103,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 
 // ==================== 定义 props ====================
 const props = defineProps({
@@ -141,7 +149,8 @@ const translations = {
     articleList: '文章列表',
     publishArticle: '发布文章',
     admin: '管理员',
-    user: '用户'
+    user: '用户',
+    DataKe: '数据可视化'
   },
   en: {
     personalCenter: 'Personal Center',
@@ -152,7 +161,8 @@ const translations = {
     articleList: 'Article List',
     publishArticle: 'Publish Article',
     admin: 'Administrator',
-    user: 'User'
+    user: 'User',
+    DataKe: 'Data Visualization'
   }
 }
 
@@ -195,6 +205,9 @@ onMounted(() => {
 console.log('当前权限：', props.userInfo.permissions)
 console.log('userInfo:', props.userInfo)
 console.log('permissions:', props.userInfo.permissions)
+
+
+
 </script>
 
 <style lang="scss" scoped>

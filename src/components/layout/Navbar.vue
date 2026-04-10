@@ -195,7 +195,8 @@ const translations = {
     settings: '系统设置',
     logout: '退出登录',
     switchTheme: '切换主题',
-    selectTheme: '选择主题色'
+    selectTheme: '选择主题色',
+    DataKe:'数据'
   },
   en: {
     personalCenter: 'Personal Center',
@@ -210,7 +211,7 @@ const translations = {
     settings: 'Settings',
     logout: 'Logout',
     switchTheme: 'Switch Theme',
-    selectTheme: 'Select Theme Color'
+    selectTheme: 'Select Theme Color',
   }
 }
 

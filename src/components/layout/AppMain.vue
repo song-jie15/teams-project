@@ -1,7 +1,7 @@
 <template>
   <main class="app-main">
     <!-- 内容头部 -->
-    <div class="content-header">
+    <div class="content-header" v-if="currentMenu !== 'datalist'">
       <h1>{{ getPageTitle() }}</h1>
       <p>{{ getPageDescription() }}</p>
     </div>
@@ -162,6 +162,10 @@
           </form>
         </div>
       </div>
+      <!-- 数据可视化 -->
+        <div v-else-if="currentMenu === 'datalist'" class="page-content"> 
+          <chart></chart>
+        </div>
     </div>
   </main>
 </template>
@@ -169,6 +173,7 @@
 <script setup>
 import axios from '../../utiles/request'
 import { ref, onMounted } from 'vue'
+import chart from '../../views/chart/DatalistView.vue'
 
 // ==================== 定义 props ====================
 const props = defineProps({

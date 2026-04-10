@@ -6,7 +6,14 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    component: HomeView
+    component: HomeView,
+    children: [
+      {
+        path: 'datalist',
+        name: 'datalist',
+        component: () => import('../views/chart/DatalistView.vue')
+      }
+    ]
   },
   {
     path: '/login',
