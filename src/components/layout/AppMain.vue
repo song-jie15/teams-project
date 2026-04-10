@@ -140,26 +140,7 @@
       <!-- 发布文章 -->
       <div v-else-if="currentMenu === 'publishArticle'" class="page-content">
         <div class="form-container">
-          <h2>发布文章</h2>
-          <form class="article-form">
-            <div class="form-group">
-              <label>标题</label>
-              <input type="text" placeholder="请输入文章标题" />
-            </div>
-            <div class="form-group">
-              <label>内容</label>
-              <textarea placeholder="请输入文章内容"></textarea>
-            </div>
-            <div class="form-group">
-              <label>分类</label>
-              <select>
-                <option value="tech">技术</option>
-                <option value="life">生活</option>
-                <option value="work">工作</option>
-              </select>
-            </div>
-            <button type="submit" class="btn btn-primary">发布</button>
-          </form>
+          <PublishArticle/>
         </div>
       </div>
     </div>
@@ -169,6 +150,7 @@
 <script setup>
 import axios from '../../utiles/request'
 import { ref, onMounted } from 'vue'
+import PublishArticle from '../PublishArticle.vue'
 
 // ==================== 定义 props ====================
 const props = defineProps({
