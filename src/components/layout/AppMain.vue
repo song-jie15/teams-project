@@ -98,62 +98,111 @@
       <!-- 文章列表 -->
       <div v-else-if="currentMenu === 'articleList'" class="page-content">
         <div class="table-container">
-          <h2>文章列表</h2>
+          <div class="table-header">
+            <h2>文章列表</h2>
+            <div class="search-box">
+              <el-input
+                v-model="searchQuery"
+                placeholder="搜索文章标题或作者..."
+                clearable
+                prefix-icon="Search"
+                style="width: 300px"
+                @input="filterArticles"
+              />
+            </div>
+          </div>
+          
           <p class="drag-hint">提示：可以拖拽文章行进行排序</p>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>排序</th>
-                <th>ID</th>
-                <th>标题</th>
-                <th>作者</th>
-                <th>发布时间</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(article, index) in articles"
-                :key="article.id"
-                draggable="true"
-                @dragstart="handleArticleDragStart($event, index)"
-                @dragover="handleDragOver($event)"
-                @dragleave="handleDragLeave($event)"
-                @drop="handleArticleDrop($event, index)"
-                class="draggable-row"
-              >
-                <td class="drag-handle">☰</td>
-                <td>{{ article.id }}</td>
-                <td>{{ article.title }}</td>
-                <td>{{ article.zuozhe || article.author }}</td>
-                <td>{{ formatDate(article.date) }}</td>
-                <td>
-                  <button class="btn btn-edit">编辑</button>
-                  <button class="btn btn-delete">删除</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          
+          <div v-loading="loading" element-loading-text="加载中..." class="table-wrapper">
+            <table class="data-table" v-if="paginatedArticles.length > 0">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">排序</th>
+                  <th style="width: 60px;">ID</th>
+                  <th>标题</th>
+                  <th style="width: 300px;">内容预览</th>
+                  <th style="width: 100px;">作者</th>
+                  <th style="width: 180px;">发布时间</th>
+                  <th style="width: 180px;">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  v-for="(article, index) in paginatedArticles"
+                  :key="article.id"
+                  draggable="true"
+                  @dragstart="handleArticleDragStart($event, index)"
+                  @dragover="handleDragOver($event)"
+                  @dragleave="handleDragLeave($event)"
+                  @drop="handleArticleDrop($event, index)"
+                  class="draggable-row"
+                >
+                  <td class="drag-handle">☰</td>
+                  <td>{{ article.id }}</td>
+                  <td>
+                    <div class="article-title">{{ article.title }}</div>
+                  </td>
+                  <td>
+                    <div class="content-preview" v-html="stripHtml(article.content)"></div>
+                  </td>
+                  <td>{{ article.zuozhe || article.author }}</td>
+                  <td>{{ formatDate(article.date) }}</td>
+                  <td>
+                    <el-button 
+                      type="primary" 
+                      size="small" 
+                      @click="handleEdit(article)"
+                    >
+                      编辑
+                    </el-button>
+                    <el-button 
+                      type="danger" 
+                      size="small" 
+                      @click="handleDelete(article)"
+                    >
+                      删除
+                    </el-button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            
+            <el-empty v-else description="暂无文章" />
+          </div>
+          
+          <div class="pagination-container" v-if="filteredArticles.length > 0">
+            <el-pagination
+              v-model:current-page="currentPage"
+              v-model:page-size="pageSize"
+              :page-sizes="[10, 20, 50, 100]"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="filteredArticles.length"
+              @size-change="handleSizeChange"
+              @current-change="handleCurrentChange"
+            />
+          </div>
         </div>
       </div>
 
       <!-- 发布文章 -->
       <div v-else-if="currentMenu === 'publishArticle'" class="page-content">
         <div class="form-container">
-          <PublishArticle/>
+          <PublishArticle @publish-success="getArticallist" />
         </div>
       </div>
       <!-- 数据可视化 -->
-        <div v-else-if="currentMenu === 'datalist'" class="page-content"> 
-          <chart></chart>
-        </div>
+      <div v-else-if="currentMenu === 'datalist'" class="page-content">
+        <chart></chart>
+      </div>
     </div>
   </main>
 </template>
 
 <script setup>
 import axios from '../../utiles/request'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import PublishArticle from '../PublishArticle.vue'
 import chart from '../../views/chart/DatalistView.vue'
 
@@ -248,9 +297,18 @@ const getUserlist = async () => {
 }
 //拉取文章数据
 const getArticallist = async () => {
-  const res = await axios.post('http://localhost:3000/articlelist')
-  articles.value = res.data
-  console.log('获取后端文章数据', res.data)
+  loading.value = true
+  try {
+    const res = await axios.post('http://localhost:3000/articlelist')
+    articles.value = res.data || []
+    filteredArticles.value = articles.value
+    console.log('获取后端文章数据', res.data)
+  } catch (error) {
+    console.error('获取文章列表失败:', error)
+    ElMessage.error('获取文章列表失败')
+  } finally {
+    loading.value = false
+  }
 }
 //调用函数
 onMounted(() => {
@@ -258,16 +316,90 @@ onMounted(() => {
   getArticallist()
 })
 // 文章数据
-const articles = ref([
-  { id: 1, title: 'Vue 3 入门教程', author: 'huangshang', date: '2026-04-01' },
-  {
-    id: 2,
-    title: 'JavaScript 高级技巧',
-    author: 'taijian',
-    date: '2026-04-02'
-  },
-  { id: 3, title: 'CSS 布局指南', author: 'pingmin', date: '2026-04-03' }
-])
+const articles = ref([])
+const loading = ref(false)
+const searchQuery = ref('')
+const currentPage = ref(1)
+const pageSize = ref(10)
+const filteredArticles = ref([])
+
+// 过滤文章
+const filterArticles = () => {
+  if (!searchQuery.value) {
+    filteredArticles.value = articles.value
+  } else {
+    const query = searchQuery.value.toLowerCase()
+    filteredArticles.value = articles.value.filter(article => {
+      const title = (article.title || '').toLowerCase()
+      const author = (article.zuozhe || article.author || '').toLowerCase()
+      return title.includes(query) || author.includes(query)
+    })
+  }
+  currentPage.value = 1
+}
+
+// 分页处理
+const handleSizeChange = (val) => {
+  pageSize.value = val
+  currentPage.value = 1
+}
+
+const handleCurrentChange = (val) => {
+  currentPage.value = val
+}
+
+// 分页计算属性
+const paginatedArticles = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return filteredArticles.value.slice(start, end)
+})
+
+// HTML 标签去除，显示纯文本预览
+const stripHtml = (html) => {
+  if (!html) return ''
+  const tmp = document.createElement('div')
+  tmp.innerHTML = html
+  const text = tmp.textContent || tmp.innerText || ''
+  return text.length > 80 ? text.substring(0, 80) + '...' : text
+}
+
+// 编辑文章
+const handleEdit = (article) => {
+  ElMessage.info('编辑功能开发中...')
+  console.log('编辑文章:', article)
+}
+
+// 删除文章
+const handleDelete = (article) => {
+  ElMessageBox.confirm(
+    `确定要删除文章《${article.title}》吗？`,
+    '警告',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  ).then(async () => {
+    try {
+      loading.value = true
+      const res = await axios.post('http://localhost:3000/article/delete', { id: article.id })
+      
+      if (res?.data?.code === 200 || res?.code === 200) {
+        ElMessage.success('删除成功')
+        articles.value = articles.value.filter(a => a.id !== article.id)
+      } else {
+        ElMessage.error(res?.data?.msg || res?.data?.message || '删除失败')
+      }
+    } catch (error) {
+      ElMessage.error('删除失败：' + (error.response?.data?.msg || error.message))
+    } finally {
+      loading.value = false
+    }
+  }).catch(() => {
+    ElMessage.info('已取消删除')
+  })
+}
 
 // ==================== 拖拽相关 ====================
 // 拖拽的起始索引
@@ -504,12 +636,33 @@ onMounted(() => {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   background-color: white;
   padding: 1.5rem;
+  
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    
+    h2 {
+      margin-bottom: 0;
+    }
+    
+    .search-box {
+      display: flex;
+      gap: 12px;
+    }
+  }
 
   .drag-hint {
     color: var(--text-secondary, #64748b);
     font-size: 0.875rem;
     margin-bottom: 1rem;
     font-weight: 500;
+  }
+  
+  .table-wrapper {
+    position: relative;
+    min-height: 200px;
   }
 
   .data-table {
@@ -546,6 +699,25 @@ onMounted(() => {
         transform: translateY(-1px);
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
       }
+    }
+    
+    .article-title {
+      font-weight: 500;
+      color: var(--text-primary, #1e293b);
+      max-width: 250px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .content-preview {
+      color: var(--text-secondary, #64748b);
+      font-size: 0.8rem;
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.5;
     }
 
     .drag-handle {
@@ -629,6 +801,12 @@ onMounted(() => {
         }
       }
     }
+  }
+  
+  .pagination-container {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: flex-end;
   }
 }
 
