@@ -135,6 +135,10 @@
             <span class="menu-item-icon">⚙️</span>
             <span>{{ t('settings') }}</span>
           </a>
+          <a href="#" class="user-menu-item" @click.prevent="navigateToExcel">
+            <span class="menu-item-icon">📊</span>
+            <span>{{ t('excelImportExport') }}</span>
+          </a>
           <div class="user-menu-divider"></div>
           <button class="user-menu-item logout" @click="handleLogout">
             <span class="menu-item-icon">🚪</span>
@@ -193,6 +197,7 @@ const translations = {
     markAllRead: '全部已读',
     profile: '个人资料',
     settings: '系统设置',
+    excelImportExport: 'Excel导入导出',
     logout: '退出登录',
     switchTheme: '切换主题',
     selectTheme: '选择主题色',
@@ -209,6 +214,7 @@ const translations = {
     markAllRead: 'Mark all as read',
     profile: 'Profile',
     settings: 'Settings',
+    excelImportExport: 'Excel Import Export',
     logout: 'Logout',
     switchTheme: 'Switch Theme',
     selectTheme: 'Select Theme Color',
@@ -339,6 +345,15 @@ const toggleUserMenu = () => {
   // 关闭其他面板
   showNotification.value = false
   showThemePanel.value = false
+}
+
+/**
+ * 跳转到 Excel 导入导出页面
+ */
+const navigateToExcel = () => {
+  router.push('/excel')
+  // 关闭用户菜单
+  showUserMenu.value = false
 }
 
 /**

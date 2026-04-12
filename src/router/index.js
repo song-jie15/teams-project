@@ -16,6 +16,11 @@ const routes = [
     ]
   },
   {
+    path: '/excel',
+    name: 'excel',
+    component: () => import('../views/ExcelView.vue')
+  },
+  {
     path: '/login',
     name: 'login',
     component: LoginView
