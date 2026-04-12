@@ -215,8 +215,8 @@ console.log('permissions:', props.userInfo.permissions)
 .sidebar {
   width: 240px;
   min-height: 100vh;
-  background-color: #1e293b;
-  border-right: 2px solid #ef4444;
+  background-color: var(--sidebar-bg, #ffffff);
+  border-right: 2px solid var(--primary-color, #3498db);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -245,7 +245,7 @@ console.log('permissions:', props.userInfo.permissions)
   // 侧边栏头部：Logo区域
   .sidebar-header {
     padding: 1.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--sidebar-border, #e2e8f0);
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -264,7 +264,7 @@ console.log('permissions:', props.userInfo.permissions)
     }
 
     .logo-text {
-      color: white;
+      color: var(--sidebar-text, #1e293b);
       font-size: 1.25rem;
       font-weight: 600;
       transition: all 0.3s ease;
@@ -288,7 +288,7 @@ console.log('permissions:', props.userInfo.permissions)
             height: 0;
             border-left: 5px solid transparent;
             border-right: 5px solid transparent;
-            border-top: 5px solid rgba(255, 255, 255, 0.7);
+            border-top: 5px solid var(--sidebar-text-secondary, #64748b);
             transition: transform 0.3s ease;
           }
 
@@ -299,7 +299,7 @@ console.log('permissions:', props.userInfo.permissions)
 
         .sub-menu {
           padding-left: 1.5rem;
-          background-color: rgba(255, 255, 255, 0.05);
+          background-color: var(--sidebar-submenu-bg, #f8fafc);
           max-height: 0;
           overflow: hidden;
           transition: max-height 0.3s ease;
@@ -312,16 +312,16 @@ console.log('permissions:', props.userInfo.permissions)
             .menu-link {
               padding: 0.75rem 1.5rem;
               font-size: 0.875rem;
-              color: rgba(255, 255, 255, 0.7);
+              color: var(--sidebar-text-secondary, #64748b);
 
               &:hover {
-                background-color: rgba(255, 255, 255, 0.1);
+                background-color: var(--sidebar-hover-bg, rgba(0, 0, 0, 0.05));
               }
 
               &.active {
-                color: white;
-                background-color: rgba(239, 68, 68, 0.2);
-                border-left: 3px solid #ef4444;
+                color: var(--sidebar-text, #1e293b);
+                background-color: var(--sidebar-active-bg, rgba(52, 152, 219, 0.1));
+                border-left: 3px solid var(--primary-color, #3498db);
               }
             }
           }
@@ -332,19 +332,19 @@ console.log('permissions:', props.userInfo.permissions)
         display: flex;
         align-items: center;
         padding: 1rem 1.5rem;
-        color: rgba(255, 255, 255, 0.8);
+        color: var(--sidebar-text, #1e293b);
         text-decoration: none;
         transition: all 0.3s ease;
 
         &:hover {
-          background-color: rgba(255, 255, 255, 0.1);
-          color: white;
+          background-color: var(--sidebar-hover-bg, rgba(0, 0, 0, 0.05));
+          color: var(--sidebar-text, #1e293b);
         }
 
         &.active {
-          color: white;
-          background-color: rgba(239, 68, 68, 0.2);
-          border-left: 3px solid #ef4444;
+          color: var(--sidebar-text, #1e293b);
+          background-color: var(--sidebar-active-bg, rgba(52, 152, 219, 0.1));
+          border-left: 3px solid var(--primary-color, #3498db);
         }
 
         .menu-icon {
@@ -365,7 +365,7 @@ console.log('permissions:', props.userInfo.permissions)
   // 侧边栏底部：用户信息
   .sidebar-footer {
     padding: 1rem 1.5rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--sidebar-border, #e2e8f0);
 
     .user-info {
       display: flex;
@@ -377,11 +377,11 @@ console.log('permissions:', props.userInfo.permissions)
         width: 32px;
         height: 32px;
         border-radius: 50%;
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: var(--sidebar-avatar-bg, rgba(0, 0, 0, 0.1));
         display: flex;
         align-items: center;
         justify-content: center;
-        color: white;
+        color: var(--sidebar-text, #1e293b);
         font-size: 0.875rem;
         font-weight: 600;
       }
@@ -390,13 +390,13 @@ console.log('permissions:', props.userInfo.permissions)
         transition: all 0.3s ease;
 
         .user-name {
-          color: white;
+          color: var(--sidebar-text, #1e293b);
           font-size: 0.875rem;
           font-weight: 500;
         }
 
         .user-role {
-          color: rgba(255, 255, 255, 0.6);
+          color: var(--sidebar-text-secondary, #64748b);
           font-size: 0.75rem;
         }
       }

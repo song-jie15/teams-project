@@ -10,28 +10,40 @@
 
     <!-- 头部右侧：功能按钮区域 -->
     <div class="header-right">
-      <!-- 1. 主题色切换功能：仅管理员可见 -->
-      <div v-if="userInfo.role === 'admin'" class="theme-switcher">
+      <!-- 1. 主题切换功能 -->
+      <div class="theme-switcher">
+        <!-- 明暗主题切换 -->
         <button
           class="header-btn"
-          @click="toggleTheme"
-          :title="t('switchTheme')"
+          @click="toggleDarkMode"
+          :title="isDarkMode ? t('switchToLight') : t('switchToDark')"
         >
-          <span class="icon">🎨</span>
+          <span class="icon">{{ isDarkMode ? '🌞' : '🌙' }}</span>
         </button>
-        <!-- 主题色选择面板 -->
-        <div v-if="showThemePanel" class="theme-panel">
-          <div class="theme-title">{{ t('selectTheme') }}</div>
-          <div class="theme-colors">
-            <button
-              v-for="color in themeColors"
-              :key="color.value"
-              class="theme-color-btn"
-              :style="{ backgroundColor: color.value }"
-              :class="{ active: currentTheme === color.value }"
-              @click="changeTheme(color.value)"
-              :title="color.name"
-            ></button>
+        
+        <!-- 主题色切换功能：仅管理员可见 -->
+        <div v-if="userInfo.role === 'admin'" class="theme-color-switcher">
+          <button
+            class="header-btn"
+            @click="toggleTheme"
+            :title="t('switchTheme')"
+          >
+            <span class="icon">🎨</span>
+          </button>
+          <!-- 主题色选择面板 -->
+          <div v-if="showThemePanel" class="theme-panel">
+            <div class="theme-title">{{ t('selectTheme') }}</div>
+            <div class="theme-colors">
+              <button
+                v-for="color in themeColors"
+                :key="color.value"
+                class="theme-color-btn"
+                :style="{ backgroundColor: color.value }"
+                :class="{ active: currentTheme === color.value }"
+                @click="changeTheme(color.value)"
+                :title="color.name"
+              ></button>
+            </div>
           </div>
         </div>
       </div>
@@ -201,6 +213,8 @@ const translations = {
     logout: '退出登录',
     switchTheme: '切换主题',
     selectTheme: '选择主题色',
+    switchToDark: '切换到暗色模式',
+    switchToLight: '切换到亮色模式',
     DataKe:'数据'
   },
   en: {
@@ -218,6 +232,8 @@ const translations = {
     logout: 'Logout',
     switchTheme: 'Switch Theme',
     selectTheme: 'Select Theme Color',
+    switchToDark: 'Switch to Dark Mode',
+    switchToLight: 'Switch to Light Mode',
   }
 }
 
@@ -226,11 +242,13 @@ const t = (key) => {
   return translations[currentLanguage.value][key] || key
 }
 
-// ==================== 主题色切换功能 ====================
+// ==================== 主题切换功能 ====================
 // 是否显示主题面板
 const showThemePanel = ref(false)
 // 当前主题色
 const currentTheme = ref('#3498db')
+// 是否为暗色模式
+const isDarkMode = ref(false)
 
 // 可选主题色列表
 const themeColors = [
@@ -313,10 +331,40 @@ const toggleTheme = () => {
  */
 const changeTheme = (color) => {
   currentTheme.value = color
-  // 设置 CSS 变量
+   // 设置全局 CSS 变量
   document.documentElement.style.setProperty('--primary-color', color)
   localStorage.setItem('themeColor', color)
   showThemePanel.value = false
+}
+
+/**
+ * 切换暗色模式
+ */
+const toggleDarkMode = () => {
+  isDarkMode.value = !isDarkMode.value
+  // 切换 HTML 元素的类
+  document.documentElement.classList.toggle('dark-mode', isDarkMode.value)
+  // 保存到本地存储
+  localStorage.setItem('isDarkMode', isDarkMode.value)
+}
+
+/**
+ * 初始化主题设置
+ */
+const initTheme = () => {
+  // 从本地存储读取主题色设置
+  const savedTheme = localStorage.getItem('themeColor')
+  if (savedTheme) {
+    currentTheme.value = savedTheme
+    document.documentElement.style.setProperty('--primary-color', savedTheme)
+  }
+
+  // 从本地存储读取暗色模式设置
+  const savedDarkMode = localStorage.getItem('isDarkMode')
+  if (savedDarkMode !== null) {
+    isDarkMode.value = savedDarkMode === 'true'
+    document.documentElement.classList.toggle('dark-mode', isDarkMode.value)
+  }
 }
 
 /**
@@ -381,12 +429,14 @@ const handleLogout = async () => {
 }
 
 // ==================== 生命周期钩子 ====================
-onMounted(() => {
-  // 从本地存储读取语言设置
-  const savedLanguage = localStorage.getItem('language')
-  if (savedLanguage) {
-    currentLanguage.value = savedLanguage
-  }
+// onMounted(() => {
+//   // 从本地存储读取语言设置
+//   const savedLanguage = localStorage.getItem('language')
+//   if (savedLanguage) {
+//     currentLanguage.value = savedLanguage
+//   }
+  // 初始化主题设置
+  initTheme()
 
   // 从本地存储读取主题色设置
   const savedTheme = localStorage.getItem('themeColor')
@@ -408,7 +458,7 @@ onMounted(() => {
       showThemePanel.value = false
     }
   })
-})
+
 </script>
 
 <style lang="scss">
@@ -775,6 +825,98 @@ onMounted(() => {
     }
   }
 }
+
+// ==================== 暗色模式样式 ====================
+.dark-mode {
+  .sticky-header {
+    background-color: var(--header-bg, #1f2937);
+    border-bottom-color: var(--border-color, #374151);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  .header-btn {
+    color: var(--text-secondary, #9ca3af);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: var(--text-primary, #f3f4f6);
+    }
+  }
+
+  .search-box input {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--border-color, #374151);
+    color: var(--text-primary, #f3f4f6);
+
+    &::placeholder {
+      color: var(--text-secondary, #9ca3af);
+    }
+
+    &:focus {
+      border-color: var(--primary-color, #3498db);
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+    }
+  }
+
+  .search-btn {
+    color: var(--text-secondary, #9ca3af);
+
+    &:hover {
+      color: var(--primary-color, #3498db);
+    }
+  }
+
+  .notification-panel,
+  .theme-panel,
+  .user-menu {
+    background-color: var(--header-bg, #1f2937);
+    border-color: var(--border-color, #374151);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .notification-header span,
+  .theme-title,
+  .menu-user-name {
+    color: var(--text-primary, #f3f4f6);
+  }
+
+  .notification-item {
+    color: var(--text-primary, #f3f4f6);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+  }
+
+  .user-avatar-btn {
+    color: var(--text-primary, #f3f4f6);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  .user-menu-item {
+    color: var(--text-primary, #f3f4f6);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    &.logout {
+      color: #ef4444;
+
+      &:hover {
+        background-color: rgba(239, 68, 68, 0.1);
+      }
+    }
+  }
+
+  .menu-user-role {
+    color: var(--text-secondary, #9ca3af);
+  }
+}
+
 
 // ==================== 响应式设计 ====================
 @media (max-width: 768px) {
