@@ -30,13 +30,23 @@
         </div>
       </el-tab-pane>
       <el-tab-pane label="副文本" name="second">
-        <div class="preview-content" v-html="mkEditor?.getHTML()"></div>
+        <div class="editor-container">
+          <Editer
+            ref="editerRef"
+            :title="title"
+            :disabled="!title.trim()"
+            @submit="handleEditorSubmit"
+            @reset="handleEditorReset"
+          />
+        </div>
       </el-tab-pane>
     </el-tabs>
   </div>
 </template>
 
 <script setup>
+import Editer from './Editer.vue'
+
 import { onMounted, ref, onBeforeUnmount } from 'vue'
 import MKEditor from '@toast-ui/editor'
 import '@toast-ui/editor/dist/toastui-editor.css'
@@ -51,6 +61,8 @@ const activeName = ref('first')
 const title = ref('')
 const role = ref('')
 const loading = ref(false)
+const editerLoading = ref(false)
+const editerRef = ref(null)
 let mkEditor = null
 let el = null
 
@@ -82,7 +94,71 @@ const handleReset = () => {
   if (mkEditor) {
     mkEditor.setMarkdown('')
   }
+  // 同时重置富文本编辑器
+  if (editerRef.value) {
+    editerRef.value.clearContent()
+  }
   ElMessage.info('已重置')
+}
+
+// 富文本编辑器重置事件
+const handleEditorReset = () => {
+  title.value = ''
+  if (mkEditor) {
+    mkEditor.setMarkdown('')
+  }
+}
+
+// 富文本编辑器提交事件
+const handleEditorSubmit = async ({ title: articleTitle, content }) => {
+  if (editerLoading.value) return
+
+  try {
+    const userInfo = localStorage.getItem('userInfo')
+    if (!userInfo) {
+      ElMessage.error('请先登录')
+      return
+    }
+
+    const user = JSON.parse(userInfo)
+    role.value = user.username
+
+    editerLoading.value = true
+    if (editerRef.value) {
+      editerRef.value.setLoading(true)
+    }
+
+    const res = await axios.post('http://localhost:3000/aticalAdd', {
+      title: articleTitle.trim(),
+      content: content,
+      date: new Date().toISOString(),
+      author: role.value
+    })
+
+    console.log('发布响应:', res, 999)
+
+    if (res?.data?.code === 200 || res?.code === 200) {
+      ElMessage.success('发布成功')
+      title.value = ''
+      if (editerRef.value) {
+        editerRef.value.clearContent()
+      }
+      // 触发发布成功事件，通知父组件刷新列表
+      emit('publish-success')
+    } else {
+      const errorMsg = res?.data?.msg || res?.data?.message || res?.msg || '发布失败'
+      ElMessage.error(errorMsg)
+    }
+  } catch (error) {
+    console.error('发布失败:', error)
+    const errorMsg = error.response?.data?.msg || error.response?.data?.message || error.message || '网络错误，请稍后重试'
+    ElMessage.error('发布失败：' + errorMsg)
+  } finally {
+    editerLoading.value = false
+    if (editerRef.value) {
+      editerRef.value.setLoading(false)
+    }
+  }
 }
 
 const onSubmitClick = async () => {

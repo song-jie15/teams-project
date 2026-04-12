@@ -59,7 +59,11 @@
                 <td class="drag-handle">☰</td>
                 <td>{{ user.id }}</td>
                 <td>{{ user.username }}</td>
-                <td>{{ user.role }}</td>
+                <td>
+                  <!-- 1:为皇上，2：为太监，3为平明 -->
+                  {{ user.roleId === 1 ? '皇上' : user.roleId === 2 ? '帅哥' : '平民' }}
+                  <br>
+                </td>
                 <td>
                   <button class="btn btn-edit">编辑</button>
                   <button class="btn btn-delete">删除</button>
@@ -74,29 +78,52 @@
       <div v-else-if="currentMenu === 'addUser'" class="page-content">
         <div class="form-container">
           <h2>添加用户</h2>
-          <form class="user-form">
+          <form class="user-form" @submit.prevent="handleAddUser">
             <div class="form-group">
               <label>用户名</label>
-              <input type="text" placeholder="请输入用户名" />
+              <el-input
+                v-model="addUserForm.username"
+                placeholder="请输入用户名"
+                clearable
+                required
+              />
             </div>
             <div class="form-group">
               <label>密码</label>
-              <input type="password" placeholder="请输入密码" />
+              <el-input
+                v-model="addUserForm.password"
+                type="password"
+                placeholder="请输入密码"
+                show-password
+                clearable
+                required
+              />
             </div>
             <div class="form-group">
               <label>角色</label>
-              <select>
-                <option value="admin">管理员</option>
-                <option value="user">用户</option>
-              </select>
+              <el-select
+                v-model="addUserForm.roleId"
+                placeholder="请选择角色"
+                required
+              >
+                <el-option label="皇上" value="1" />
+                <el-option label="太监" value="2" />
+                <el-option label="平民" value="3" />
+              </el-select>
             </div>
-            <button type="submit" class="btn btn-primary">提交</button>
+            <el-button
+              type="primary"
+              native-type="submit"
+              :loading="addUserLoading"
+            >
+              {{ addUserLoading ? '添加中...' : '提交' }}
+            </el-button>
           </form>
         </div>
       </div>
 
       <!-- 文章列表 -->
-      <div v-else-if="currentMenu === 'articleList'" class="page-content">
+      <div v-else-if="currentMenu === 'articleList' && !showArticleDetail" class="page-content">
         <div class="table-container">
           <div class="table-header">
             <h2>文章列表</h2>
@@ -149,20 +176,29 @@
                   <td>{{ article.zuozhe || article.author }}</td>
                   <td>{{ formatDate(article.date) }}</td>
                   <td>
-                    <el-button 
-                      type="primary" 
-                      size="small" 
-                      @click="handleEdit(article)"
-                    >
-                      编辑
-                    </el-button>
-                    <el-button 
-                      type="danger" 
-                      size="small" 
-                      @click="handleDelete(article)"
-                    >
-                      删除
-                    </el-button>
+                    <div class="action-buttons">
+                      <el-button 
+                        type="primary" 
+                        size="small" 
+                        @click="handleEdit(article)"
+                      >
+                        编辑
+                      </el-button>
+                      <el-button 
+                        type="info" 
+                        size="small" 
+                        @click="handleView(article)"
+                      >
+                        查看
+                      </el-button>
+                      <el-button 
+                        type="danger" 
+                        size="small" 
+                        @click="handleDelete(article)"
+                      >
+                        删除
+                      </el-button>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -184,6 +220,15 @@
           </div>
         </div>
       </div>
+      
+      <!-- 文章详情 -->
+      <div v-else-if="currentMenu === 'articleList' && showArticleDetail" class="page-content">
+        <ArticleDetail
+          :article="currentArticle"
+          @edit="handleDetailEdit"
+          @back="handleDetailBack"
+        />
+      </div>
 
       <!-- 发布文章 -->
       <div v-else-if="currentMenu === 'publishArticle'" class="page-content">
@@ -196,6 +241,13 @@
         <chart></chart>
       </div>
     </div>
+
+    <!-- 文章编辑模态框 -->
+    <ArticleEditModal
+      v-model="editModalVisible"
+      :article="currentEditArticle"
+      @success="handleEditSuccess"
+    />
   </main>
 </template>
 
@@ -204,6 +256,8 @@ import axios from '../../utiles/request'
 import { ref, onMounted, watch, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import PublishArticle from '../PublishArticle.vue'
+import ArticleEditModal from '../ArticleEditModal.vue'
+import ArticleDetail from '../ArticleDetail.vue'
 import chart from '../../views/chart/DatalistView.vue'
 
 // ==================== 定义 props ====================
@@ -323,6 +377,14 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const filteredArticles = ref([])
 
+// 添加用户相关
+const addUserForm = ref({
+  username: '',
+  password: '',
+  roleId: ''
+})
+const addUserLoading = ref(false)
+
 // 过滤文章
 const filterArticles = () => {
   if (!searchQuery.value) {
@@ -364,10 +426,106 @@ const stripHtml = (html) => {
   return text.length > 80 ? text.substring(0, 80) + '...' : text
 }
 
+// 编辑文章模态框相关
+const editModalVisible = ref(false)
+const currentEditArticle = ref({})
+
+// 文章详情相关
+const showArticleDetail = ref(false)
+const currentArticle = ref({})
+
 // 编辑文章
 const handleEdit = (article) => {
-  ElMessage.info('编辑功能开发中...')
-  console.log('编辑文章:', article)
+  currentEditArticle.value = { ...article }
+  editModalVisible.value = true
+  showArticleDetail.value = false
+}
+
+// 查看文章
+const handleView = (article) => {
+  currentArticle.value = { ...article }
+  showArticleDetail.value = true
+}
+
+// 编辑成功回调
+const handleEditSuccess = () => {
+  getArticallist()
+}
+
+// 从详情页编辑
+const handleDetailEdit = (article) => {
+  currentEditArticle.value = { ...article }
+  editModalVisible.value = true
+  showArticleDetail.value = false
+}
+
+// 从详情页返回列表
+const handleDetailBack = () => {
+  showArticleDetail.value = false
+}
+
+// 添加用户
+const handleAddUser = async () => {
+  if (!addUserForm.value.username.trim()) {
+    ElMessage.warning('请输入用户名')
+    return
+  }
+  
+  if (!addUserForm.value.password.trim()) {
+    ElMessage.warning('请输入密码')
+    return
+  }
+  
+  if (!addUserForm.value.roleId) {
+    ElMessage.warning('请选择角色')
+    return
+  }
+  
+  try {
+    addUserLoading.value = true
+    
+    console.log('发送添加用户请求:', {
+      username: addUserForm.value.username.trim(),
+      password: addUserForm.value.password.trim(),
+      roleId: addUserForm.value.roleId
+    })
+    
+    const res = await axios.post('http://localhost:3000/add', {
+      username: addUserForm.value.username.trim(),
+      password: addUserForm.value.password.trim(),
+      roleId: addUserForm.value.roleId
+    })
+    
+    console.log('添加用户响应:', res)
+    
+    if (res?.code === 200) {
+      ElMessage.success('添加用户成功')
+      // 重置表单
+      addUserForm.value = {
+        username: '',
+        password: '',
+        roleId: ''
+      }
+      // 刷新用户列表
+      await getUserlist()
+    } else {
+      const errorMsg = res?.message || res?.msg || '添加用户失败'
+      console.error('添加用户失败:', res)
+      ElMessage.error(errorMsg)
+    }
+  } catch (error) {
+    console.error('添加用户异常:', error)
+    console.error('错误详情:', {
+      message: error.message,
+      response: error.response,
+      status: error.response?.status,
+      data: error.response?.data
+    })
+    const errorMsg = error.response?.data?.message || error.response?.data?.msg || error.message || '网络错误，请稍后重试'
+    ElMessage.error('添加用户失败：' + errorMsg)
+  } finally {
+    addUserLoading.value = false
+  }
 }
 
 // 删除文章
@@ -383,11 +541,12 @@ const handleDelete = (article) => {
   ).then(async () => {
     try {
       loading.value = true
-      const res = await axios.post('http://localhost:3000/article/delete', { id: article.id })
+      const res = await axios.post('http://localhost:3000/aticalDel', { id: article.id })
       
       if (res?.data?.code === 200 || res?.code === 200) {
         ElMessage.success('删除成功')
-        articles.value = articles.value.filter(a => a.id !== article.id)
+        // 重新获取文章列表以确保数据最新
+        await getArticallist()
       } else {
         ElMessage.error(res?.data?.msg || res?.data?.message || '删除失败')
       }
@@ -498,17 +657,30 @@ const handleArticleDrop = (event, dropIndex) => {
     dragStartArticleIndex.value !== null &&
     dragStartArticleIndex.value !== dropIndex
   ) {
-    // 执行排序操作
-    const newArticles = [...articles.value]
+    // 执行排序操作（修改filteredArticles，这样分页和搜索结果也能正确拖拽）
+    const newArticles = [...filteredArticles.value]
     const [draggedItem] = newArticles.splice(dragStartArticleIndex.value, 1)
     newArticles.splice(dropIndex, 0, draggedItem)
-    articles.value = newArticles
+    filteredArticles.value = newArticles
+
+    // 同时更新原始articles数组，保持数据一致性
+    const originalIndex = articles.value.findIndex(a => a.id === draggedItem.id)
+    if (originalIndex !== -1) {
+      const newOriginalArticles = [...articles.value]
+      newOriginalArticles.splice(originalIndex, 1)
+      // 计算在原始数组中的新位置
+      const newOriginalIndex = dropIndex < dragStartArticleIndex.value 
+        ? dropIndex 
+        : dropIndex + (originalIndex < dropIndex ? 0 : 1)
+      newOriginalArticles.splice(newOriginalIndex, 0, draggedItem)
+      articles.value = newOriginalArticles
+    }
 
     // 重置拖拽索引
     dragStartArticleIndex.value = null
 
     // 这里可以添加调用后端 API 的代码，保存排序结果
-    console.log('排序后的文章列表:', articles.value)
+    console.log('排序后的文章列表:', filteredArticles.value)
   }
 }
 
@@ -739,6 +911,12 @@ onMounted(() => {
       &:active {
         cursor: grabbing;
       }
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      align-items: center;
     }
 
     .draggable-row {

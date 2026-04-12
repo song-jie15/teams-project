@@ -20,7 +20,8 @@
     "vue": "^3.5.25",
     "vue-router": "^4.6.4",
     "vue3-draggable-resizable": "^1.6.5",
-    "vue3-transitions": "^1.0.0"
+    "vue3-transitions": "^1.0.0",
+    "wangeditor": "^4.7.15"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
